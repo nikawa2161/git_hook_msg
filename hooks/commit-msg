@@ -1,0 +1,48 @@
+echo "\033[32;1m🪝 Running Git Hooks: commit-msg\033[0m"
+# コミットメッセージを定義
+MSG="$(cat "$1")" # $1: コミットメッセージファイルのパス
+readonly MSG
+# code -> 0: OK, 1: NG
+code=0
+
+echo " - Prefixの存在チェック: "
+## 必要なPrefixを定義
+readonly CORRECT_PREFIXES=("feat" "fix" "test" "refactor" "docs" "style" "pref" "chore")
+## 各要素に": "を追加
+for i in "${!CORRECT_PREFIXES[@]}"; do
+  correct_prefixes[i]="${CORRECT_PREFIXES[i]}:"
+done
+## `grep -E`で配列からOR検索をするため、半角スペース(" ")の区切り文字をパイプ("|")に変更
+prefixes="$(
+  IFS="|"
+  echo "${correct_prefixes[*]}"
+)"
+if ! echo "$MSG" | grep -Eq "${prefixes}"; then
+  echo "\033[31;22mNG"
+  echo "================================================================"
+  echo "コミットメッセージにPrefixが含まれていません。"
+  echo "\033[36;1mPrefix\033[32;22m"
+  echo "  ${correct_prefixes[*]}"
+  echo "\033[36;1mDescription\033[32;22m"
+  echo "  ${correct_prefixes[0]}    新規機能開発"
+  echo "  ${correct_prefixes[1]}     バグの対応"
+  echo "  ${correct_prefixes[2]}    テストの追加、修正等"
+  echo "  ${correct_prefixes[3]}実装は変わらないけどコードのメンテナンス性向上とかの対応"
+  echo "  ${correct_prefixes[4]}    ドキュメントの追加、修正等"
+  echo "  ${correct_prefixes[5]}   コードの意味に影響を与えない変更"
+  echo "  ${correct_prefixes[6]}    設定ファイルの変更"
+  echo "  ${correct_prefixes[7]}   その他"
+  echo "\033[31;22m================================================================\033[0m\n"
+  code=1
+else
+  echo "\033[32;22mOK\033[0m"
+fi
+
+# 終了宣言
+if [ ${code} -eq 0 ]; then
+  echo "\033[32;1m✨ALL PASS!!\033[0m\n\n"
+else
+  echo "\033[31;1mGit Hooks: commit-msg: NG\033[0m\n\n"
+fi
+
+exit ${code}
